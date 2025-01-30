@@ -1,105 +1,108 @@
-# ServerCommander
+ServerCommander – The Ultimate SSH & FTP/SFTP Client
 
-**ServerCommander** is a powerful, modular tool designed for managing and controlling local and remote servers. It supports SSH, FTP, SFTP, and more with a sleek, customizable CLI interface.
+1. Overview
 
-## Features
+ServerCommander is a powerful terminal-based client for SSH, FTP, and SFTP, enabling secure and efficient management of local and remote servers.
 
-- **Multi-Protocol Management**: Supports SSH, FTP, SFTP, and more for seamless server management.
-- **Cross-Platform Support**: Manage servers running on Windows, Linux, and macOS.
-- **Server Dashboard**: Get real-time system information such as CPU usage, memory, and disk status.
-- **File Management**: Upload, download, and manage files on remote servers securely.
-- **Task Automation**: Schedule and execute tasks like backups and system maintenance.
-- **User & Role Management**: Add and manage users with specific roles and permissions.
-- **Security**: Two-Factor Authentication (2FA) and secure connections for enhanced safety.
-- **Modular Design**: Easily extendable with additional protocols and server management tools.
+It features a colorized console, stable connections, and practical file transfer and server management functionalities – all packaged as a standalone executable for Windows, Linux, and macOS.
 
-## Installation
+2. Features
 
-### Prerequisites
+Feature	Description
+SSH Support	Secure connections to remote servers using SSH.
+SFTP Support	Secure file transfers using SSH File Transfer Protocol.
+FTP Support	Support for unencrypted and encrypted FTP connections.
+Session Management	Save and restore server connections.
+Local & Remote Management	Manage both local systems (Windows, Linux, macOS) and remote servers.
+Colorized Terminal	Improved readability with syntax highlighting and customizable themes.
+Keyboard Shortcuts	Efficient navigation with configurable key bindings.
+Authentication	Supports password and SSH key authentication.
+Logging & Debugging	Detailed session logs for analysis and troubleshooting.
+Cross-Platform	Runs as .exe (Windows), .bin (Linux), and .app (macOS).
 
-- **Go** (version 1.16 or higher) is required to build the project.
-- **Git** to clone the repository.
+3. Installation & Build
 
-### Steps
+3.1 Prerequisites
+	•	Go (version 1.16 or higher)
+	•	Git
+	•	SSH client, FTP/SFTP client (optional)
 
-1. Clone the repository:
+3.2 Build Process
 
-   ```bash
-   git clone https://github.com/vectode/ServerCommander.git
-   cd ServerCommander
-   ```
-   
-2. Build the project:
+ServerCommander can be compiled for each operating system:
 
-  ```bash
-  go build -o server-commander
-  ```
+Windows (.exe)
 
-3. Run the application:
+GOOS=windows GOARCH=amd64 go build -o server-commander.exe
 
-  ```bash
-  ./server-commander
-  ```
+Linux (.bin)
 
-## Usage
+GOOS=linux GOARCH=amd64 go build -o server-commander.bin
 
-Once you have the application running, you can interact with it using the following commands:
+macOS (.app / .bin)
 
-- **Connect to a server**:
+GOOS=darwin GOARCH=amd64 go build -o server-commander.app
 
-  ```bash
-  server-commander connect --host <server-ip> --protocol ssh
-  ```
-  
-- **View server dashboard**:
+After building, run the executable:
 
-  ```bash
-  server-commander dashboard
-  ```
+./server-commander
 
-- **Upload a file to a remote server**:
+4. Usage
 
-  ```bash
-  server-commander upload --host <server-ip> --path /path/to/file
-  ```
+4.1 Connecting to Servers
+	•	Start an SSH connection:
 
-- **Schedule a task**:
+server-commander ssh user@host
 
-  ```bash
-  server-commander schedule --task backup --time "0 3 * * *"
-  ```
 
-For a complete list of commands and options, run:
+	•	Open an SFTP session:
 
-```bash
-server-commander --help
-```
+server-commander sftp user@host
 
-## Configuration
 
-The application supports various configuration options, which can be adjusted in the ```config/``` directory. You can modify:
+	•	Start an FTP session:
 
-- **Themes**: Customize the color scheme of the CLI interface.
-- **Server Settings**: Set default configurations for connecting to remote servers.
+server-commander ftp user@host
 
-## Contributing
 
-We welcome contributions to improve **ServerCommander**. If you have suggestions, bug fixes, or new features, feel free to submit a pull request.
 
-### How to Contribute
+4.2 File Transfers
+	•	Upload a file:
 
-1. Fork the repository.
-2. Create a new branch (```git checkout -b feature/your-feature```).
-3. Make your changes.
-4. Commit your changes (```git commit -am 'Add new feature'```).
-5. Push to the branch (```git push origin feature/your-feature```).
-6. Create a pull request.
+server-commander upload /local/file /remote/path
 
-## License
-This project is licensed under the MIT License - see the [LICENSE]() file for details.
 
-## Acknowledgments
+	•	Download a file:
 
-- **Go** for providing a powerful and efficient programming language.
-- **OpenSSH**, **FTP**, **SFTP** for enabling secure connections and file management.
-- **CLI** for enabling a sleek command-line interface.
+server-commander download /remote/file /local/path
+
+
+
+4.3 Retrieving System Information
+	•	Display server status:
+
+server-commander status
+
+
+	•	Manage running processes:
+
+server-commander process-list
+
+
+
+4.4 Logging & Debugging
+	•	View logs:
+
+server-commander logs
+
+5. Architecture & Implementation
+	•	Programming Language: Go
+	•	SSH/SFTP: golang.org/x/crypto/ssh
+	•	FTP: github.com/jlaffaye/ftp
+	•	Terminal Handling: github.com/muesli/termenv
+	•	Config Handling: viper for session storage
+
+6. Conclusion
+
+ServerCommander is a 1:1 alternative to PuTTY, but with integrated FTP/SFTP support and packaged as a standalone executable for Windows, Linux, and macOS.
+It is perfect for system administrators and developers who need a fast and efficient server management tool.
