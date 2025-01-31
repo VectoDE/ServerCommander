@@ -1,108 +1,129 @@
-ServerCommander – The Ultimate SSH & FTP/SFTP Client
+# ServerCommander – The Ultimate SSH & FTP/SFTP Client
 
-1. Overview
+## Overview
 
-ServerCommander is a powerful terminal-based client for SSH, FTP, and SFTP, enabling secure and efficient management of local and remote servers.
+ServerCommander is a powerful terminal-based client for **SSH**, **FTP**, and **SFTP**, enabling secure and efficient management of **local and remote servers**.
 
-It features a colorized console, stable connections, and practical file transfer and server management functionalities – all packaged as a standalone executable for Windows, Linux, and macOS.
+It features a **colorized console**, **stable connections**, and **practical file transfer and server management functionalities** – all packaged as a **standalone executable** for **Windows**, **Linux**, and **macOS**.
 
-2. Features
+## Features
 
-Feature	Description
-SSH Support	Secure connections to remote servers using SSH.
-SFTP Support	Secure file transfers using SSH File Transfer Protocol.
-FTP Support	Support for unencrypted and encrypted FTP connections.
-Session Management	Save and restore server connections.
-Local & Remote Management	Manage both local systems (Windows, Linux, macOS) and remote servers.
-Colorized Terminal	Improved readability with syntax highlighting and customizable themes.
-Keyboard Shortcuts	Efficient navigation with configurable key bindings.
-Authentication	Supports password and SSH key authentication.
-Logging & Debugging	Detailed session logs for analysis and troubleshooting.
-Cross-Platform	Runs as .exe (Windows), .bin (Linux), and .app (macOS).
+| Feature                   | Description                                                            |
+|---------------------------|------------------------------------------------------------------------|
+| SSH Support               | Secure connections to remote servers using SSH.                        |
+| SFTP Support              | Secure file transfer using SSH File Transfer Protocol.                 |
+| FTP Support               | Support for unencrypted and encrypted FTP connections.                 |
+| Session Management        | Save and restore server connections.                                   |
+| Local & Remote Management | Manage both local systems (Windows, Linux, macOS) and remote servers.  |
+| Colorized Terminal        | Improved readability with syntax highlighting and customizable themes. |
+| Keyboard Shortcuts        | Efficient navigation with configurable key bindings.                   |
+| Authentication            | Supports passowrd and SSH key authentication.                          |
+| Logging & Debugging       | Detailed session logs for analysis and troubleshooting.                |
+| Cross-Platform            | Runs as .exe (Windows), .bin (Linux) and .app (macOS).                 |
 
-3. Installation & Build
+## Installation & Build
 
-3.1 Prerequisites
-	•	Go (version 1.16 or higher)
-	•	Git
-	•	SSH client, FTP/SFTP client (optional)
+### Prerequisites
 
-3.2 Build Process
+- Go (version 1.16 or higher)
+- Git
+- SSH client, FTP/SFTP client (optional)
+
+### Build Process
 
 ServerCommander can be compiled for each operating system:
 
-Windows (.exe)
+### Windows (.exe)
 
+```bash
 GOOS=windows GOARCH=amd64 go build -o server-commander.exe
+```
 
-Linux (.bin)
+### Linux (.bin)
 
+```bash
 GOOS=linux GOARCH=amd64 go build -o server-commander.bin
+```
 
-macOS (.app / .bin)
+### macOS (.app / .bin)
 
+```bash
 GOOS=darwin GOARCH=amd64 go build -o server-commander.app
+```
 
 After building, run the executable:
 
+```bash
 ./server-commander
+```
 
-4. Usage
+## Usage
 
-4.1 Connecting to Servers
-	•	Start an SSH connection:
+### Connecting to Servers
 
-server-commander ssh user@host
+- **Start an SSH connection**:
 
+  ```bash
+  server-commander ssh user@host
+  ```
 
-	•	Open an SFTP session:
+- **Open an SFTP session**:
 
-server-commander sftp user@host
+  ```bash
+  server-commander sftp user@host
+  ```
 
+- **Start an FTP session**:
 
-	•	Start an FTP session:
+  ```bash
+  server-commander ftp user@host
+  ```
 
-server-commander ftp user@host
+### File Transfers
 
+- **Upload a file**:
 
+  ```bash
+  server-commander upload /local/file /remote/path
+  ```
 
-4.2 File Transfers
-	•	Upload a file:
+- **Download a file**:
 
-server-commander upload /local/file /remote/path
+  ```bash
+  server-commander download /remote/file /local/path
+  ```
 
+### Retrieving System Information
 
-	•	Download a file:
+- **Display server status**:
 
-server-commander download /remote/file /local/path
+  ```bash
+  server-commander status
+  ```
 
+- **Manage running processes**:
 
+  ```bash
+  server-commander process-list
+  ```
 
-4.3 Retrieving System Information
-	•	Display server status:
+### Logging & Debugging
 
-server-commander status
+- **View logs**:
 
+  ```bash
+  server-commander logs
+  ```
 
-	•	Manage running processes:
+## Architecture & Implementation
 
-server-commander process-list
+- **Programming Language**: Go
+- **SSH/SFTP**: ```golang.org/x/crypto/ssh```
+- **FTP**: ```github.com/jlaffaye/ftp```
+- **Terminal Handling**: ```github.com/muesli/termenv```
+- **Config Handling**: ```viper``` for session storage
 
+## Conclusion
 
-
-4.4 Logging & Debugging
-	•	View logs:
-
-server-commander logs
-
-5. Architecture & Implementation
-	•	Programming Language: Go
-	•	SSH/SFTP: golang.org/x/crypto/ssh
-	•	FTP: github.com/jlaffaye/ftp
-	•	Terminal Handling: github.com/muesli/termenv
-	•	Config Handling: viper for session storage
-
-6. Conclusion
-
-ServerCommander is a 1:1 alternative to PuTTY, but with integrated FTP/SFTP support and packaged as a standalone executable for Windows, Linux, and macOS.
-It is perfect for system administrators and developers who need a fast and efficient server management tool.
+**ServerCommander** is a **alternative to PuTTY**, but with **integrated FTP/SFTP support** and packaged as a **standalone executable** for Windows, Linux, and macOS.
+It is perfect for **system administrators and developers** who need a **fast and efficient server management tool**.
