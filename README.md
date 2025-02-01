@@ -36,19 +36,19 @@ ServerCommander can be compiled for each operating system:
 ### Windows (.exe)
 
 ```bash
-GOOS=windows GOARCH=amd64 go build -o server-commander.exe
+go build -o "build/ServerCommander.exe" ./src/main.go
 ```
 
 ### Linux (.bin)
 
 ```bash
-GOOS=linux GOARCH=amd64 go build -o server-commander.bin
+go build -o "build/ServerCommander" ./src/main.go
 ```
 
 ### macOS (.app / .bin)
 
 ```bash
-GOOS=darwin GOARCH=amd64 go build -o server-commander.app
+go build -o "build/ServerCommander.app" ./src/main.go
 ```
 
 After building, run the executable:
