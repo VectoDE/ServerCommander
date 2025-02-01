@@ -1,0 +1,20 @@
+  - name: Go CI
+  # You may pin to the exact commit or the version.
+  # uses: ghacts/go@f4993de229e57d20fc296c70a1570a4dfca88db1
+  uses: ghacts/go@v1.0.0
+  with:
+    # The path to the project
+    project-path: # optional, default is 
+    # The version of Go to use
+    go-version: # optional, default is stable
+    # The version of golangci-lint to use
+    golang-ci-lint-version: # optional, default is latest
+    # Additional arguments for golangci-lint
+    golang-ci-lint-args: # optional, default is --timeout=10m
+    # Check whether to skip lint step
+    skip-lint: # optional
+    # Check whether to skip build step
+    skip-build: # optional
+    # Check whether to skip test step
+    skip-test: # optional
+          
