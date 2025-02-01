@@ -1,11 +1,12 @@
 @echo off
 SETLOCAL EnableDelayedExpansion
 
-:: Define application name and build directory
+:: Define application name and directories
 SET APP_NAME=ServerCommander
 SET BUILD_DIR=..\build
-SET ICON_PATH=..\src\assets\icon.ico
 SET SRC_DIR=..\src
+SET ICON_PATH=%SRC_DIR%\assets\icon.ico
+SET RESOURCE_FILE=%SRC_DIR%\rsrc.syso
 
 :: Function to check if Go is installed
 echo Checking if Go is installed...
@@ -42,12 +43,15 @@ IF NOT EXIST "%CACHE_DIR%" (
 )
 SET GOPATH=%CACHE_DIR%
 
-:: Output the cache folder (just for verification)
-echo Using cache: %CACHE_DIR%
+:: Convert icon.ico to rsrc.syso (inside src)
+echo 🔨 Creating resource file (rsrc.syso) with icon...
+rsrc -ico "%ICON_PATH%" -o "%RESOURCE_FILE%"
 
-:: Build the resource file for the Windows icon
-echo 🔨 Creating resource file with icon...
-rsrc -ico "%ICON_PATH%" -o ../src/assets/resource.syso
+:: Verify that rsrc.syso was created successfully
+IF NOT EXIST "%RESOURCE_FILE%" (
+    echo ❌ Error: rsrc.syso was not created. Build cannot continue.
+    exit /b 1
+)
 
 :: Build for Windows
 echo 🔨 Building for Windows (.exe)...
