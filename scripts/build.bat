@@ -49,25 +49,25 @@ echo Using cache: %CACHE_DIR%
 echo 🔨 Creating resource file with icon...
 rsrc -ico "%ICON_PATH%" -o ../src/assets/resource.syso
 
-:: Build for Windows with Icon
-echo 🔨 Building for Windows...
+:: Build for Windows
+echo 🔨 Building for Windows (.exe)...
 SET GOOS=windows
 SET GOARCH=amd64
 go build -o "%BUILD_DIR%\%APP_NAME%.exe" ../src/main.go
 
 :: Check if the Windows build was successful
 IF %ERRORLEVEL% EQU 0 (
-    echo ✅ Windows build completed with icon!
+    echo ✅ Windows build completed!
 ) ELSE (
     echo ❌ Error during Windows build
     exit /b 1
 )
 
 :: Build for Linux
-echo 🐧 Building for Linux...
+echo 🐧 Building for Linux (.bin)...
 SET GOOS=linux
 SET GOARCH=amd64
-go build -o "%BUILD_DIR%\%APP_NAME%.desktop" ../src/main.go
+go build -o "%BUILD_DIR%\%APP_NAME%.bin" ../src/main.go
 
 :: Check if the Linux build was successful
 IF %ERRORLEVEL% EQU 0 (
@@ -78,7 +78,7 @@ IF %ERRORLEVEL% EQU 0 (
 )
 
 :: Build for macOS
-echo 🍏 Building for macOS...
+echo 🍏 Building for macOS (.app)...
 SET GOOS=darwin
 SET GOARCH=amd64
 go build -o "%BUILD_DIR%\%APP_NAME%.app" ../src/main.go
@@ -91,7 +91,7 @@ IF %ERRORLEVEL% EQU 0 (
     exit /b 1
 )
 
-:: New step: Compress the entire src folder, excluding the build directory
+:: Compress the entire src folder, excluding the build directory
 echo 📦 Compressing src directory (excluding build)...
 
 :: Remove existing src.zip if it exists
@@ -101,9 +101,9 @@ IF EXIST "%BUILD_DIR%\src.zip" (
 )
 
 :: Compress the src folder
-powershell -Command "Get-ChildItem -Path '%SRC_DIR%' -Recurse -Exclude 'build' | Compress-Archive -DestinationPath '%BUILD_DIR%\src.zip'"
+powershell -Command "Compress-Archive -Path '%SRC_DIR%\*' -DestinationPath '%BUILD_DIR%\src.zip' -Force"
 
-:: Final message without cleaning the build folder
+:: Final message
 echo ✅ Build process completed for all platforms! Your build files and the compressed src folder are located in the "%BUILD_DIR%" folder.
 
 ENDLOCAL
