@@ -1,10 +1,25 @@
-- name: Go CI
-  uses: ghacts/go@v1.0.0
+- name: Set up Go
+  uses: actions/setup-go@v3
   with:
-    project-path: ./src/
     go-version: '1.23.5'
-    golang-ci-lint-version: '1.51.0'
-    golang-ci-lint-args: '--timeout=5m --disable-all --enable=gofmt --enable=golint'
-    skip-lint: false
-    skip-build: false
-    skip-test: false
+
+- name: Cache Go modules
+  uses: actions/cache@v3
+  with:
+    path: ~/.cache/go-build
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+    restore-keys: |
+      ${{ runner.os }}-go-
+
+- name: Install golangci-lint
+  run: |
+    curl -sSfL https://github.com/golangci/golangci-lint/releases/download/v1.51.0/golangci-lint-1.51.0-linux-amd64.tar.gz | tar -xzv -C /tmp
+    sudo mv /tmp/golangci-lint-1.51.0-linux-amd64/golangci-lint /usr/local/bin
+
+- name: Lint code
+  run: golangci-lint run --timeout=5m --disable-all --enable=gofmt --enable=golint
+
+- name: Build and test Go project
+  run: |
+    go mod tidy
+    go test ./...
