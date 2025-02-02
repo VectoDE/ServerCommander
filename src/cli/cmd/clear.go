@@ -13,19 +13,18 @@ import (
 func ClearConsole() {
 	clearCmd, err := getClearCommand()
 	if err != nil {
-		services.LogToFile(fmt.Sprintf("Error determining clear command: %v", err))
+		services.LogToFile(fmt.Sprintf("Error determining clear command: %v", err), "ERROR")
 		fmt.Println("Failed to determine the clear command:", err)
 		return
 	}
 
 	if err := executeClearCommand(clearCmd); err != nil {
-		services.LogToFile(fmt.Sprintf("Failed to clear console: %v", err))
+		services.LogToFile(fmt.Sprintf("Failed to clear console: %v", err), "ERROR")
 		fmt.Println("Failed to clear the console:", err)
 		return
 	}
 
-	services.LogToFile("Console cleared successfully")
-
+	services.LogToFile("Console cleared successfully", "INFO")
 	ui.ApplicationBanner()
 }
 

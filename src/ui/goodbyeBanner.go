@@ -2,18 +2,29 @@ package ui
 
 import (
 	"fmt"
+	"servercommander/src/services"
 	"servercommander/src/utils"
 	"time"
+
+	"github.com/pterm/pterm"
 )
 
-func GoodbyeBanner() {
-	fmt.Println(utils.Yellow, "Goodbye! The program will close in 3 seconds...", utils.Reset)
-	time.Sleep(1 * time.Second)
+func GoodbyeBanner(duration int) {
+	pterm.DefaultCenter.Println(fmt.Sprintf("%sGoodbye! The program will close in %d seconds...", utils.Yellow, duration))
 
-	for i := 3; i > 0; i-- {
-		fmt.Printf("%sClosing in %d seconds...\r", utils.Cyan, i)
+	multi := pterm.DefaultMultiPrinter
+
+	pb1, _ := pterm.DefaultProgressbar.WithTotal(duration).WithWriter(multi.NewWriter()).Start("Shutting down...")
+
+	multi.Start()
+
+	for i := duration; i > 0; i-- {
+		pb1.Increment()
+
 		time.Sleep(1 * time.Second)
 	}
 
-	time.Sleep(2 * time.Second)
+	multi.Stop()
+
+	services.LogToFile("Displayed Goodbye Banner", "INFO")
 }

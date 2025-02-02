@@ -10,9 +10,9 @@ import (
 )
 
 func ExitCommand() {
-	services.LogToFile("Program exited")
+	services.LogToFile("Program exited", "INFO")
 
-	ui.GoodbyeBanner()
+	ui.GoodbyeBanner(3)
 
 	fmt.Println(utils.Red, "Exiting the program...", utils.Reset)
 
