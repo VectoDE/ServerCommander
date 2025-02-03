@@ -23,52 +23,102 @@ func HtopCommand() {
 	}
 	defer keyboard.Close()
 
+	cpuInfo, _ := cpu.Info()
+	cpuName := "Unknown"
+	if len(cpuInfo) > 0 {
+		cpuName = cpuInfo[0].ModelName
+	}
+
+	hostInfo, _ := host.Info()
+
 	for {
-		cpuInfo, _ := cpu.Info()
-		cpuPercent, _ := cpu.Percent(time.Second, false)
-		memStats, _ := mem.VirtualMemory()
-		diskStats, _ := disk.Usage("/")
-		hostInfo, _ := host.Info()
-
-		gpuName, gpuUsage := getGPUInfo()
-
-		pterm.Println("\033[H\033[2J")
+		fmt.Print("\033[H\033[2J")
 
 		s, _ := pterm.DefaultBigText.WithLetters(pterm.NewLettersFromString("Resource Monitor")).Srender()
-		pterm.DefaultCenter.Println(s)
+		pterm.Println(s)
 
-		cpuName := "Unknown"
-		if len(cpuInfo) > 0 {
-			cpuName = cpuInfo[0].ModelName
-		}
+		cpuPercent, _ := cpu.Percent(500*time.Millisecond, false)
+		memStats, _ := mem.VirtualMemory()
+		diskStats := getDiskUsage()
+		gpuName, gpuUsage := getGPUInfo()
+		ramModules := getMemoryModules()
 
-		pterm.DefaultTable.WithHasHeader(true).WithData([][]string{
-			{"Component", "Name", "Usage (%)"},
+		data := [][]string{
+			{"Component", "Name", "Usage"},
 			{"CPU", cpuName, fmt.Sprintf("%.2f%%", cpuPercent[0])},
-			{"RAM", "Memory", fmt.Sprintf("%.2f%%", memStats.UsedPercent)},
-			{"Storage", "Disk", fmt.Sprintf("%.2f%%", diskStats.UsedPercent)},
-			{"GPU", gpuName, fmt.Sprintf("%.2f%%", gpuUsage)},
-		}).Render()
+			{"RAM Total", "Memory", fmt.Sprintf("%.2f%% (%.2f GB / %.2f GB)", memStats.UsedPercent, float64(memStats.Used)/1e9, float64(memStats.Total)/1e9)},
+		}
+		for _, ram := range ramModules {
+			data = append(data, []string{"RAM Module", ram.Name, fmt.Sprintf("%.2f GB", ram.Capacity)})
+		}
+		for _, d := range diskStats {
+			data = append(data, []string{"Storage", d.Name, fmt.Sprintf("%.2f%% (%.2f GB / %.2f GB)", d.UsedPercent, d.Used, d.Total)})
+		}
+		data = append(data, []string{"GPU", gpuName, fmt.Sprintf("%.2f%%", gpuUsage)})
 
-		pterm.DefaultBarChart.WithHorizontal().WithBars([]pterm.Bar{
-			{Label: "CPU", Value: int(cpuPercent[0]), Style: pterm.NewStyle(pterm.FgGreen)},
-			{Label: "RAM", Value: int(memStats.UsedPercent), Style: pterm.NewStyle(pterm.FgBlue)},
-			{Label: "Storage", Value: int(diskStats.UsedPercent), Style: pterm.NewStyle(pterm.FgCyan)},
-			{Label: "GPU", Value: int(gpuUsage), Style: pterm.NewStyle(pterm.FgMagenta)},
-		}).Render()
+		pterm.DefaultTable.WithHasHeader(true).WithData(data).Render()
 
 		pterm.Info.Println("Operating System:", hostInfo.Platform, hostInfo.PlatformVersion)
 		pterm.Info.Println("Press F10 to exit.")
 
-		time.Sleep(2 * time.Second)
-
-		if char, key, err := keyboard.GetKey(); err == nil {
-			if key == keyboard.KeyF10 || char == 0 {
-				pterm.Warning.Println("Exiting monitoring...")
-				break
+		select {
+		case <-time.After(1 * time.Second):
+		default:
+			if char, key, err := keyboard.GetKey(); err == nil {
+				if key == keyboard.KeyF10 || char == 0 {
+					pterm.Warning.Println("Exiting monitoring...")
+					return
+				}
 			}
 		}
 	}
+}
+
+type DiskUsage struct {
+	Name        string
+	Total       float64
+	Used        float64
+	UsedPercent float64
+}
+
+func getDiskUsage() []DiskUsage {
+	partitions, _ := disk.Partitions(false)
+	var diskUsages []DiskUsage
+	for _, partition := range partitions {
+		usage, err := disk.Usage(partition.Mountpoint)
+		if err == nil {
+			diskUsages = append(diskUsages, DiskUsage{
+				Name:        partition.Mountpoint,
+				Total:       float64(usage.Total) / 1e9,
+				Used:        float64(usage.Used) / 1e9,
+				UsedPercent: usage.UsedPercent,
+			})
+		}
+	}
+	return diskUsages
+}
+
+type RAMModule struct {
+	Name     string
+	Capacity float64
+}
+
+func getMemoryModules() []RAMModule {
+	var modules []RAMModule
+	if runtime.GOOS == "windows" {
+		out, err := exec.Command("wmic", "memorychip", "get", "Capacity,Manufacturer").Output()
+		if err == nil {
+			lines := strings.Split(string(out), "\n")
+			for _, line := range lines[1:] {
+				fields := strings.Fields(line)
+				if len(fields) >= 2 {
+					capacity, _ := strconv.ParseFloat(fields[0], 64)
+					modules = append(modules, RAMModule{Name: fields[1], Capacity: capacity / 1e9})
+				}
+			}
+		}
+	}
+	return modules
 }
 
 func getGPUInfo() (string, float64) {
