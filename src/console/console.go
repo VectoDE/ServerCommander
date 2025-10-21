@@ -18,7 +18,7 @@ func Run(executor func(string) error) error {
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
-		fmt.Printf("%ssc>%s ", utils.Cyan, utils.Reset)
+		fmt.Printf("%s>>>%s ", utils.Cyan, utils.Reset)
 
 		if !scanner.Scan() {
 			fmt.Println()
