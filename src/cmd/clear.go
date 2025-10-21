@@ -6,12 +6,12 @@ import (
 	"os/exec"
 	"runtime"
 
-	"servercommander/src/ui"
+	"servercommander/src/console"
 )
 
 func clearCommand(args []string) error {
-	if ui.ClearConsole() {
-		ui.ApplicationBanner()
+	if console.ClearConsole() {
+		console.ApplicationBanner()
 		return nil
 	}
 
@@ -24,7 +24,7 @@ func clearCommand(args []string) error {
 		return fmt.Errorf("failed to clear the console: %w", err)
 	}
 
-	ui.ApplicationBanner()
+	console.ApplicationBanner()
 	return nil
 }
 
