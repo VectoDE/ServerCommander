@@ -3,11 +3,35 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
+	"sync"
 )
 
-var reader = bufio.NewReader(os.Stdin)
+var (
+	readerMu sync.RWMutex
+	reader   = bufio.NewReader(os.Stdin)
+)
+
+// SetPromptReader allows callers to override the input source used by the
+// prompt helpers. Passing nil keeps the existing reader untouched.
+func SetPromptReader(r io.Reader) {
+	if r == nil {
+		return
+	}
+
+	readerMu.Lock()
+	reader = bufio.NewReader(r)
+	readerMu.Unlock()
+}
+
+func readLine() (string, error) {
+	readerMu.RLock()
+	active := reader
+	readerMu.RUnlock()
+	return active.ReadString('\n')
+}
 
 // Prompt requests free-form input from the user. The default value is used when
 // the user submits an empty string.
@@ -18,7 +42,7 @@ func Prompt(question, defaultValue string) (string, error) {
 	}
 	fmt.Print(": ")
 
-	input, err := reader.ReadString('\n')
+	input, err := readLine()
 	if err != nil {
 		return "", err
 	}
@@ -36,7 +60,7 @@ func Prompt(question, defaultValue string) (string, error) {
 // terminal.
 func PromptPassword(question string) (string, error) {
 	fmt.Printf("%s%s (input hidden not supported): %s", Cyan, question, Reset)
-	value, err := reader.ReadString('\n')
+	value, err := readLine()
 	if err != nil {
 		return "", err
 	}
