@@ -191,13 +191,19 @@ func promptSessionDetails(alias string, existing config.Session, exists bool) (c
 
 	authMethod := config.AuthMethod(authDefault)
 	if protocol != config.ProtocolFTP {
-		authInput, err := utils.Prompt("Authentication (password/private_key)", authDefault)
-		if err != nil {
-			return config.Session{}, err
-		}
-		authMethod = config.AuthMethod(strings.ToLower(authInput))
-		if authMethod != config.AuthPassword && authMethod != config.AuthPrivateKey {
-			return config.Session{}, fmt.Errorf("unsupported auth method '%s'", authMethod)
+		authInput := authDefault
+		for {
+			authInput, err = utils.Prompt("Authentication method (password/private_key)", authInput)
+			if err != nil {
+				return config.Session{}, err
+			}
+
+			authMethod = config.AuthMethod(strings.ToLower(authInput))
+			if authMethod == config.AuthPassword || authMethod == config.AuthPrivateKey {
+				break
+			}
+
+			fmt.Printf("%sUnsupported value. Enter 'password' to supply the password when connecting or 'private_key' to use a key file.%s\n", utils.Yellow, utils.Reset)
 		}
 	} else {
 		authMethod = config.AuthPassword
