@@ -13,14 +13,14 @@ import (
 // CommandHandler represents the business logic executed for a command.
 type CommandHandler func(args []string) error
 
-// commandDescriptor keeps metadata for a registered command.
-type commandDescriptor struct {
+// CommandDescriptor keeps metadata for a registered command.
+type CommandDescriptor struct {
 	Name        string
 	Description string
 	Handler     CommandHandler
 }
 
-var commandRegistry = map[string]commandDescriptor{}
+var commandRegistry = map[string]CommandDescriptor{}
 
 // RegisterCommand adds a new command to the registry. It will panic if the
 // command name collides with an existing entry because this indicates a
@@ -35,7 +35,7 @@ func RegisterCommand(name, description string, handler CommandHandler) {
 		panic(fmt.Sprintf("command %s already registered", name))
 	}
 
-	commandRegistry[key] = commandDescriptor{
+	commandRegistry[key] = CommandDescriptor{
 		Name:        key,
 		Description: description,
 		Handler:     handler,
@@ -69,8 +69,8 @@ func Execute(input string) error {
 // ListCommands returns a deterministic, alphabetically sorted slice of
 // descriptors. This is primarily used by the help command but also enables
 // other commands to query the available functionality.
-func ListCommands() []commandDescriptor {
-	commands := make([]commandDescriptor, 0, len(commandRegistry))
+func ListCommands() []CommandDescriptor {
+	commands := make([]CommandDescriptor, 0, len(commandRegistry))
 	for _, descriptor := range commandRegistry {
 		commands = append(commands, descriptor)
 	}

@@ -128,6 +128,7 @@ func runSFTPBatch(alias string, commands []string, postProcess func(string) erro
 		cmd.Stdin = strings.NewReader(batch)
 	} else {
 		cmd.Stdin = os.Stdin
+		stdoutWriter = io.MultiWriter(os.Stdout, stdoutWriter)
 		stderrWriter = io.MultiWriter(os.Stderr, stderrWriter)
 	}
 
