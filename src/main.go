@@ -4,11 +4,11 @@ import (
 	"log"
 
 	"servercommander/src/cmd"
-	"servercommander/src/ui"
+	"servercommander/src/console"
 )
 
 func main() {
-	if err := ui.RunStandaloneConsole(cmd.Execute); err != nil {
+	if err := console.Run(cmd.Execute); err != nil {
 		log.Fatal(err)
 	}
 }
