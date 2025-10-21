@@ -62,7 +62,7 @@ if /I "!TARGET_OS!"=="windows" (
 
 set "GOOS=!TARGET_OS!"
 set "GOARCH=!TARGET_ARCH!"
-go build -o "!TARGET_OUTPUT!" "!MAIN_PKG!"
+go build -tags desktop -o "!TARGET_OUTPUT!" "!MAIN_PKG!"
 if errorlevel 1 (
     echo Failed to build !TARGET_OS!/!TARGET_ARCH!.
     exit /b 1

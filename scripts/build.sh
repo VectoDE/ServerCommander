@@ -32,7 +32,7 @@ build_target() {
 
   print_step "Building ${os}/${arch}..."
   GOOS="${os}" GOARCH="${arch}" CGO_ENABLED=0 \
-    go build -o "${output}" "${MAIN_PKG}"
+    go build -tags desktop -o "${output}" "${MAIN_PKG}"
 }
 
 build_target linux amd64 "${BUILD_DIR}/${APP_NAME}-linux-amd64"
