@@ -83,6 +83,8 @@ Key commands inside the shell:
 | `clear`                               | Clear the terminal and reprint the banner.                                  |
 | `exit`                                | Gracefully shut down ServerCommander.                                       |
 
+> **Note:** When prompted for the authentication method during `session add`, enter `password` or `private_key`. Passwords are never stored—if you choose `password` you will be asked for it when connecting.
+
 ### Requirements
 
 - Go 1.20+ for building (the module targets Go 1.23).
