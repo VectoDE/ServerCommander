@@ -3,6 +3,7 @@ package ui
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"regexp"
@@ -30,8 +31,10 @@ var (
 var ansiPattern = regexp.MustCompile(`\x1b\[[0-9;]*[A-Za-z]`)
 
 const (
-	portfolioLink = "https://uplytech.com/portfolio"
-	websiteLink   = "https://uplytech.com"
+	portfolioLink      = "https://uplytech.com/portfolio"
+	websiteLink        = "https://uplytech.com"
+	commandPlaceholder = "Befehl eingeben und Enter drücken…"
+	promptPlaceholder  = "Antwort eingeben und Enter drücken…"
 )
 
 // DesktopConsole encapsulates the GUI console experience, piping stdout and
@@ -51,6 +54,10 @@ type DesktopConsole struct {
 	origStdout *os.File
 	origStderr *os.File
 
+	promptBridge    *promptBridge
+	promptMu        sync.Mutex
+	pendingResponse chan string
+
 	logMu      sync.Mutex
 	logBuilder strings.Builder
 
@@ -67,6 +74,8 @@ func RunStandaloneConsole(executor func(string) error) error {
 	if err := console.redirectStandardStreams(); err != nil {
 		return err
 	}
+
+	console.initializePromptBridge()
 
 	consoleMu.Lock()
 	consoleInstance = console
@@ -123,13 +132,13 @@ func (c *DesktopConsole) buildUI() {
 	c.scroller.SetMinSize(fyne.NewSize(0, 400))
 
 	c.input = widget.NewEntry()
-	c.input.SetPlaceHolder("Befehl eingeben und Enter drücken…")
+	c.input.SetPlaceHolder(commandPlaceholder)
 	c.input.OnSubmitted = func(text string) {
-		c.submitCommand(text)
+		c.handleInput(text)
 	}
 
 	runButton := widget.NewButton("Ausführen", func() {
-		c.submitCommand(c.input.Text)
+		c.handleInput(c.input.Text)
 	})
 	runButton.Importance = widget.HighImportance
 
@@ -146,18 +155,6 @@ func (c *DesktopConsole) buildUI() {
 	c.window.SetContent(container.NewBorder(header, footer, nil, nil, c.scroller))
 }
 
-func (c *DesktopConsole) submitCommand(command string) {
-	trimmed := strings.TrimSpace(command)
-	if trimmed == "" {
-		return
-	}
-
-	c.input.SetText("")
-	c.appendLog(">> " + trimmed + "\n")
-
-	go c.executeCommand(trimmed)
-}
-
 func (c *DesktopConsole) executeCommand(command string) {
 	if c.executor == nil {
 		return
@@ -166,6 +163,22 @@ func (c *DesktopConsole) executeCommand(command string) {
 	if err := c.executor(command); err != nil {
 		fmt.Println(utils.Red, err.Error(), utils.Reset)
 	}
+}
+
+func (c *DesktopConsole) handleInput(input string) {
+	trimmed := strings.TrimSpace(input)
+	c.input.SetText("")
+	if trimmed == "" {
+		return
+	}
+
+	if c.deliverPromptResponse(trimmed) {
+		c.appendLog(trimmed + "\n")
+		return
+	}
+
+	c.appendLog(">> " + trimmed + "\n")
+	go c.executeCommand(trimmed)
 }
 
 func (c *DesktopConsole) redirectStandardStreams() error {
@@ -193,6 +206,14 @@ func (c *DesktopConsole) redirectStandardStreams() error {
 	go c.readPipe(stderrReader, c.origStderr)
 
 	return nil
+}
+
+func (c *DesktopConsole) initializePromptBridge() {
+	bridge := newPromptBridge()
+	c.promptBridge = bridge
+	utils.SetPromptReader(bridge)
+
+	go c.watchPromptRequests()
 }
 
 func (c *DesktopConsole) readPipe(pipe *os.File, mirror *os.File) {
@@ -286,6 +307,68 @@ func (c *DesktopConsole) cleanup() {
 		}
 		if c.origStderr != nil {
 			os.Stderr = c.origStderr
+		}
+		if c.promptBridge != nil {
+			c.promptBridge.Close()
+		}
+		utils.SetPromptReader(os.Stdin)
+		c.promptMu.Lock()
+		if c.pendingResponse != nil {
+			close(c.pendingResponse)
+			c.pendingResponse = nil
+		}
+		c.promptMu.Unlock()
+	})
+}
+
+func (c *DesktopConsole) watchPromptRequests() {
+	if c.promptBridge == nil {
+		return
+	}
+
+	for responseCh := range c.promptBridge.Requests() {
+		c.promptMu.Lock()
+		c.pendingResponse = responseCh
+		c.promptMu.Unlock()
+		c.setPromptPlaceholder(true)
+	}
+	c.setPromptPlaceholder(false)
+}
+
+func (c *DesktopConsole) deliverPromptResponse(response string) bool {
+	c.promptMu.Lock()
+	responseCh := c.pendingResponse
+	if responseCh != nil {
+		c.pendingResponse = nil
+	}
+	c.promptMu.Unlock()
+
+	if responseCh == nil {
+		return false
+	}
+
+	responseCh <- response
+	close(responseCh)
+	c.setPromptPlaceholder(false)
+	return true
+}
+
+func (c *DesktopConsole) setPromptPlaceholder(waiting bool) {
+	if c.app == nil {
+		return
+	}
+
+	placeholder := commandPlaceholder
+	if waiting {
+		placeholder = promptPlaceholder
+	}
+
+	c.app.QueueUpdate(func() {
+		if c.input != nil {
+			c.input.SetPlaceHolder(placeholder)
+			if waiting {
+				c.input.Focus()
+			}
 		}
 	})
 }
@@ -409,4 +492,89 @@ func (l *logoWidget) openURL(target string) {
 	if err := l.parent.app.OpenURL(parsed); err != nil {
 		fmt.Println(utils.Red, "Konnte URL nicht öffnen:", target, utils.Reset)
 	}
+}
+
+type promptBridge struct {
+	requestCh chan chan string
+	closeCh   chan struct{}
+
+	mu     sync.Mutex
+	buffer []byte
+}
+
+func newPromptBridge() *promptBridge {
+	return &promptBridge{
+		requestCh: make(chan chan string),
+		closeCh:   make(chan struct{}),
+	}
+}
+
+func (p *promptBridge) Read(dst []byte) (int, error) {
+	if len(dst) == 0 {
+		return 0, nil
+	}
+
+	p.mu.Lock()
+	if len(p.buffer) > 0 {
+		n := copy(dst, p.buffer)
+		p.buffer = p.buffer[n:]
+		p.mu.Unlock()
+		return n, nil
+	}
+	p.mu.Unlock()
+
+	responseCh := make(chan string, 1)
+
+	select {
+	case <-p.closeCh:
+		return 0, io.EOF
+	case p.requestCh <- responseCh:
+	}
+
+	var (
+		response string
+		ok       bool
+	)
+	select {
+	case <-p.closeCh:
+		return 0, io.EOF
+	case response, ok = <-responseCh:
+	}
+
+	if !ok {
+		return 0, io.EOF
+	}
+
+	if !strings.HasSuffix(response, "\n") {
+		response += "\n"
+	}
+
+	data := []byte(response)
+	n := copy(dst, data)
+
+	if n < len(data) {
+		p.mu.Lock()
+		p.buffer = append(p.buffer, data[n:]...)
+		p.mu.Unlock()
+	}
+
+	return n, nil
+}
+
+func (p *promptBridge) Close() {
+	p.mu.Lock()
+	select {
+	case <-p.closeCh:
+		p.mu.Unlock()
+		return
+	default:
+	}
+	close(p.closeCh)
+	close(p.requestCh)
+	p.buffer = nil
+	p.mu.Unlock()
+}
+
+func (p *promptBridge) Requests() <-chan chan string {
+	return p.requestCh
 }
