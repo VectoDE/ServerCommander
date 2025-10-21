@@ -10,6 +10,11 @@ import (
 )
 
 func clearCommand(args []string) error {
+	if ui.ClearConsole() {
+		ui.ApplicationBanner()
+		return nil
+	}
+
 	clearCmd, err := getClearCommand()
 	if err != nil {
 		return fmt.Errorf("failed to determine clear command: %w", err)
