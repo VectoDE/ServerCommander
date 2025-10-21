@@ -4,17 +4,13 @@ import (
 	"fmt"
 	"os"
 
-	"servercommander/src/services"
 	"servercommander/src/ui"
 	"servercommander/src/utils"
 )
 
-func ExitCommand() {
-	services.LogToFile("Program exited")
-
+func exitCommand(args []string) error {
 	ui.GoodbyeBanner()
-
 	fmt.Println(utils.Red, "Exiting the program...", utils.Reset)
-
 	os.Exit(0)
+	return nil
 }

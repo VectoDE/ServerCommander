@@ -17,18 +17,19 @@ func main() {
 
 	for {
 		fmt.Print(utils.Yellow, "\n>> ", utils.Reset)
-		input, _ := reader.ReadString('\n')
-		command := strings.TrimSpace(input)
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Println(utils.Red, "Failed to read input:", err, utils.Reset)
+			continue
+		}
 
-		switch command {
-		case "help":
-			cmd.HelpCommand()
-		case "clear":
-			cmd.ClearConsole()
-		case "exit":
-			cmd.ExitCommand()
-		default:
-			fmt.Println(utils.Red, "Unknown command. Type 'help'.", utils.Reset)
+		command := strings.TrimSpace(input)
+		if command == "" {
+			continue
+		}
+
+		if err := cmd.Execute(command); err != nil {
+			fmt.Println(utils.Red, err, utils.Reset)
 		}
 	}
 }
