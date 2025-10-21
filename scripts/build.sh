@@ -29,10 +29,15 @@ build_target() {
   local os="$1"
   local arch="$2"
   local output="$3"
+  local tags=( )
+
+  if [[ -n "${GO_BUILD_TAGS:-}" ]]; then
+    tags=(-tags "${GO_BUILD_TAGS}")
+  fi
 
   print_step "Building ${os}/${arch}..."
   GOOS="${os}" GOARCH="${arch}" CGO_ENABLED=0 \
-    go build -tags desktop -o "${output}" "${MAIN_PKG}"
+    go build "${tags[@]}" -o "${output}" "${MAIN_PKG}"
 }
 
 build_target linux amd64 "${BUILD_DIR}/${APP_NAME}-linux-amd64"
