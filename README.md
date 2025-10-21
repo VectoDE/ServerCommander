@@ -8,18 +8,16 @@ It features a **colorized console**, **stable connections**, and **practical fil
 
 ## Features
 
-| Feature                   | Description                                                            |
-|---------------------------|------------------------------------------------------------------------|
-| SSH Support               | Secure connections to remote servers using SSH.                        |
-| SFTP Support              | Secure file transfer using SSH File Transfer Protocol.                 |
-| FTP Support               | Support for unencrypted and encrypted FTP connections.                 |
-| Session Management        | Save and restore server connections.                                   |
-| Local & Remote Management | Manage both local systems (Windows, Linux, macOS) and remote servers.  |
-| Colorized Terminal        | Improved readability with syntax highlighting and customizable themes. |
-| Keyboard Shortcuts        | Efficient navigation with configurable key bindings.                   |
-| Authentication            | Supports passowrd and SSH key authentication.                          |
-| Logging & Debugging       | Detailed session logs for analysis and troubleshooting.                |
-| Cross-Platform            | Runs as .exe (Windows), .bin (Linux) and .app (macOS).                 |
+| Feature                   | Description                                                                                 |
+|---------------------------|---------------------------------------------------------------------------------------------|
+| Interactive shell         | Built-in command dispatcher with contextual help and graceful shutdown handling.           |
+| Session management        | Persist SSH/SFTP/FTP endpoints in the user configuration directory for effortless reuse.   |
+| SSH connectivity          | Launch interactive shells or run one-off commands through the system `ssh` client.         |
+| SFTP file operations      | Upload, download, and list remote files via the `sftp` client with friendly output.        |
+| FTP/FTPS support          | Native passive-mode FTP client with optional explicit TLS for secure transfers.            |
+| Secure authentication     | Supports password and private-key based authentication (keys are never stored).            |
+| Structured logging        | Execution traces are written to `~/.config/servercommander/logs/servercommander.log`.      |
+| Cross-platform            | Designed for Windows, macOS, and Linux with no CGO dependencies.                           |
 
 ## Installation & Build
 
@@ -59,69 +57,47 @@ After building, run the executable:
 
 ## Usage
 
-### Connecting to Servers
+Run the binary and use the interactive prompt:
 
-- **Start an SSH connection**:
+```bash
+./server-commander
+```
 
-  ```bash
-  server-commander ssh user@host
-  ```
+Key commands inside the shell:
 
-- **Open an SFTP session**:
+| Command                               | Description                                                                 |
+|---------------------------------------|-----------------------------------------------------------------------------|
+| `session add <alias>`                 | Create or update a stored session (you will be guided through the fields).  |
+| `session list`                        | Display all saved sessions.                                                 |
+| `session show <alias>`                | Show session details.                                                       |
+| `session remove <alias>`              | Delete a stored session.                                                    |
+| `connect <alias>`                     | Start an interactive SSH shell for the given session.                       |
+| `ssh exec <alias> <command>`          | Execute a single command via SSH and print the output.                      |
+| `sftp list <alias> [remote-path]`     | List remote files using SFTP.                                               |
+| `sftp upload <alias> <local> <remote>`| Upload a file via SFTP.                                                     |
+| `sftp download <alias> <remote> <local>`| Download a file via SFTP.                                                |
+| `ftp list <alias> [remote-path]`      | List remote files using the built-in FTP client.                            |
+| `ftp upload <alias> <local> <remote>` | Upload a file via FTP/FTPS.                                                 |
+| `ftp download <alias> <remote> <local>`| Download a file via FTP/FTPS.                                             |
+| `help`                                | Print the command catalogue.                                                |
+| `clear`                               | Clear the terminal and reprint the banner.                                  |
+| `exit`                                | Gracefully shut down ServerCommander.                                       |
 
-  ```bash
-  server-commander sftp user@host
-  ```
+### Requirements
 
-- **Start an FTP session**:
-
-  ```bash
-  server-commander ftp user@host
-  ```
-
-### File Transfers
-
-- **Upload a file**:
-
-  ```bash
-  server-commander upload /local/file /remote/path
-  ```
-
-- **Download a file**:
-
-  ```bash
-  server-commander download /remote/file /local/path
-  ```
-
-### Retrieving System Information
-
-- **Display server status**:
-
-  ```bash
-  server-commander status
-  ```
-
-- **Manage running processes**:
-
-  ```bash
-  server-commander process-list
-  ```
-
-### Logging & Debugging
-
-- **View logs**:
-
-  ```bash
-  server-commander logs
-  ```
+- Go 1.20+ for building (the module targets Go 1.23).
+- OpenSSH client tools (`ssh` and `sftp`) available in `PATH` for SSH/SFTP features.
+- Remote FTP servers must allow passive connections when using the FTP client.
+- Password prompts in the interactive shell are echoed. Prefer SSH keys or run the system tools directly if hidden input is required.
 
 ## Architecture & Implementation
 
 - **Programming Language**: Go
-- **SSH/SFTP**: ```golang.org/x/crypto/ssh```
-- **FTP**: ```github.com/jlaffaye/ftp```
-- **Terminal Handling**: ```github.com/muesli/termenv```
-- **Config Handling**: ```viper``` for session storage
+- **Command layer**: Custom dispatcher with pluggable command registration.
+- **Session storage**: JSON file stored under `~/.config/servercommander/sessions.json`.
+- **SSH/SFTP**: Delegates to the system OpenSSH tooling for reliability and feature parity.
+- **FTP/FTPS**: In-house passive-mode client supporting optional explicit TLS.
+- **Logging**: Structured text logs in the user configuration directory.
 
 ## Conclusion
 

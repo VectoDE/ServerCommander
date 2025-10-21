@@ -6,27 +6,21 @@ import (
 	"os/exec"
 	"runtime"
 
-	"servercommander/src/services"
 	"servercommander/src/ui"
 )
 
-func ClearConsole() {
+func clearCommand(args []string) error {
 	clearCmd, err := getClearCommand()
 	if err != nil {
-		services.LogToFile(fmt.Sprintf("Error determining clear command: %v", err))
-		fmt.Println("Failed to determine the clear command:", err)
-		return
+		return fmt.Errorf("failed to determine clear command: %w", err)
 	}
 
 	if err := executeClearCommand(clearCmd); err != nil {
-		services.LogToFile(fmt.Sprintf("Failed to clear console: %v", err))
-		fmt.Println("Failed to clear the console:", err)
-		return
+		return fmt.Errorf("failed to clear the console: %w", err)
 	}
 
-	services.LogToFile("Console cleared successfully")
-
 	ui.ApplicationBanner()
+	return nil
 }
 
 func getClearCommand() (string, error) {
