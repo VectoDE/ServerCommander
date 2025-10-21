@@ -1,151 +1,117 @@
 @echo off
-SETLOCAL EnableDelayedExpansion
+setlocal EnableExtensions EnableDelayedExpansion
 
-:: Define application name and build directory
-SET APP_NAME=ServerCommander
-SET BUILD_DIR=..\build
-SET ICON_PATH=..\src\assets\icon.ico
-SET SRC_DIR=..\src
+set "SCRIPT_DIR=%~dp0"
+for %%I in ("%SCRIPT_DIR%..") do set "ROOT_DIR=%%~fI"
+set "BUILD_DIR=%ROOT_DIR%\build"
+set "APP_NAME=ServerCommander"
+set "MAIN_PKG=%ROOT_DIR%\src"
+set "ICON_PATH=%MAIN_PKG%\assets\icon.ico"
+set "RESOURCE_SYSO=%MAIN_PKG%\assets\resource.syso"
 
-:: Function to check if Go is installed
-echo Checking if Go is installed...
+echo =============================================
+echo   Building %APP_NAME% (Windows batch script)
+echo =============================================
 
-:: Check if Go is installed
-where go >nul 2>nul
-IF %ERRORLEVEL% NEQ 0 (
-    echo Go is not installed. Downloading Go...
-    call :InstallGo
+call :require_tool go "https://go.dev/dl/" || goto :fail
+call :require_tool git "https://git-scm.com/" || goto :fail
+
+if not exist "%BUILD_DIR%" (
+    mkdir "%BUILD_DIR%" || goto :fail
 )
 
-:: Check if Git is installed (necessary for downloading dependencies)
-where git >nul 2>nul
-IF %ERRORLEVEL% NEQ 0 (
-    echo Git is not installed. Please download and install Git from https://git-scm.com/
-    exit /b 1
-) ELSE (
-    echo Git is already installed.
-)
+set "CGO_ENABLED=0"
 
-:: Ensure the "build" directory exists
-IF NOT EXIST "%BUILD_DIR%" (
-    mkdir "%BUILD_DIR%"
-)
+call :build_target windows amd64 "%BUILD_DIR%\%APP_NAME%-windows-amd64.exe" || goto :fail
+call :build_target linux amd64 "%BUILD_DIR%\%APP_NAME%-linux-amd64" || goto :fail
+call :build_target darwin amd64 "%BUILD_DIR%\%APP_NAME%-darwin-amd64" || goto :fail
 
-:: Ensure all necessary Go modules are installed
-echo Installing Go modules...
-go mod tidy
+call :archive_sources || goto :fail
 
-:: Create and set the cache folder
-SET CACHE_DIR=%USERPROFILE%\AppData\Local\Temp\build_cache
-IF NOT EXIST "%CACHE_DIR%" (
-    mkdir "%CACHE_DIR%"
-)
-SET GOPATH=%CACHE_DIR%
+echo.
+echo ✅ Build completed successfully. Artifacts are located in "%BUILD_DIR%".
+endlocal
+exit /b 0
 
-:: Output the cache folder (just for verification)
-echo Using cache: %CACHE_DIR%
+:fail
+echo.
+echo ❌ Build failed.
+endlocal
+exit /b 1
 
-:: Build the resource file for the Windows icon
-echo 🔨 Creating resource file with icon...
-rsrc -ico "%ICON_PATH%" -o ../src/assets/resource.syso
-
-:: Build for Windows with Icon
-echo 🔨 Building for Windows...
-SET GOOS=windows
-SET GOARCH=amd64
-go build -o "%BUILD_DIR%\%APP_NAME%.exe" ../src/main.go
-
-:: Check if the Windows build was successful
-IF %ERRORLEVEL% EQU 0 (
-    echo ✅ Windows build completed with icon!
-) ELSE (
-    echo ❌ Error during Windows build
+:require_tool
+where %1 >nul 2>nul
+if errorlevel 1 (
+    echo %1 is required but was not found in PATH.
+    echo Please install %1 from %2 and try again.
     exit /b 1
 )
+exit /b 0
 
-:: Build for Linux
-echo 🐧 Building for Linux...
-SET GOOS=linux
-SET GOARCH=amd64
-go build -o "%BUILD_DIR%\%APP_NAME%.desktop" ../src/main.go
+:build_target
+set "TARGET_OS=%~1"
+set "TARGET_ARCH=%~2"
+set "TARGET_OUTPUT=%~3"
 
-:: Check if the Linux build was successful
-IF %ERRORLEVEL% EQU 0 (
-    echo ✅ Linux build completed!
-) ELSE (
-    echo ❌ Error during Linux build
+echo.
+echo Building !TARGET_OS!/!TARGET_ARCH!...
+
+if /I "!TARGET_OS!"=="windows" (
+    call :ensure_windows_resources || exit /b 1
+)
+
+set "GOOS=!TARGET_OS!"
+set "GOARCH=!TARGET_ARCH!"
+go build -o "!TARGET_OUTPUT!" "!MAIN_PKG!"
+if errorlevel 1 (
+    echo Failed to build !TARGET_OS!/!TARGET_ARCH!.
     exit /b 1
 )
 
-:: Build for macOS
-echo 🍏 Building for macOS...
-SET GOOS=darwin
-SET GOARCH=amd64
-go build -o "%BUILD_DIR%\%APP_NAME%.app" ../src/main.go
+if /I "!TARGET_OS!"=="windows" (
+    call :restore_windows_resources
+)
 
-:: Check if the macOS build was successful
-IF %ERRORLEVEL% EQU 0 (
-    echo ✅ macOS build completed!
-) ELSE (
-    echo ❌ Error during macOS build
+exit /b 0
+
+:ensure_windows_resources
+if exist "%RESOURCE_SYSO%" (
+    set "CLEAN_RESOURCE="
+    exit /b 0
+)
+
+where rsrc >nul 2>nul
+if errorlevel 1 (
+    echo Windows resources not found and rsrc.exe is not installed.
+    echo Install rsrc from https://github.com/akavel/rsrc/releases to embed the application icon.
     exit /b 1
 )
 
-:: New step: Compress the entire src folder, excluding the build directory
-echo 📦 Compressing src directory (excluding build)...
-
-:: Remove existing src.zip if it exists
-IF EXIST "%BUILD_DIR%\src.zip" (
-    echo Deleting existing src.zip...
-    del "%BUILD_DIR%\src.zip"
-)
-
-:: Compress the src folder
-powershell -Command "Get-ChildItem -Path '%SRC_DIR%' -Recurse -Exclude 'build' | Compress-Archive -DestinationPath '%BUILD_DIR%\src.zip'"
-
-:: Final message without cleaning the build folder
-echo ✅ Build process completed for all platforms! Your build files and the compressed src folder are located in the "%BUILD_DIR%" folder.
-
-ENDLOCAL
-exit /b
-
-:InstallGo
-:: Install Go by downloading it from the official site
-echo Downloading Go from the official website...
-
-:: Download Go binary (Windows 64-bit as an example)
-powershell -Command "Invoke-WebRequest -Uri https://go.dev/dl/go1.20.5.windows-amd64.msi -OutFile '%TEMP%\go_installer.msi'"
-
-:: Install Go using MSI package
-msiexec /i "%TEMP%\go_installer.msi" /quiet
-
-:: Wait for Go installation to complete
-echo Waiting for Go installation to complete...
-timeout /t 10 /nobreak
-
-:: Check if Go is installed correctly now
-where go >nul 2>nul
-IF %ERRORLEVEL% EQU 0 (
-    echo Go has been successfully installed!
-) ELSE (
-    echo Failed to install Go. Please install it manually from https://golang.org/dl/
+echo Generating Windows resources...
+rsrc -ico "%ICON_PATH%" -o "%RESOURCE_SYSO%"
+if errorlevel 1 (
+    echo Failed to generate Windows resources.
     exit /b 1
 )
+set "CLEAN_RESOURCE=1"
+exit /b 0
 
-:: Add Go bin path to system environment variables (if not present)
-SET GO_BIN_PATH=%USERPROFILE%\Go\bin
-echo Checking if Go bin path is in system environment variables...
-
-:: Check if Go bin directory is in PATH
-echo %PATH% | findstr /I "%GO_BIN_PATH%" >nul
-IF %ERRORLEVEL% NEQ 0 (
-    echo Adding Go bin path to system environment variables...
-    setx PATH "%PATH%;%GO_BIN_PATH%"
-    echo Go bin path has been added to PATH.
-) ELSE (
-    echo Go bin path is already in PATH.
+:restore_windows_resources
+if defined CLEAN_RESOURCE (
+    del "%RESOURCE_SYSO%" >nul 2>nul
+    set "CLEAN_RESOURCE="
 )
+exit /b 0
 
-:: Clean up the installer
-del "%TEMP%\go_installer.msi"
-exit /b
+:archive_sources
+set "ARCHIVE=%BUILD_DIR%\%APP_NAME%-src.zip"
+echo.
+echo Creating source archive...
+powershell -NoLogo -NoProfile -Command ^
+    "if (Test-Path '%ARCHIVE%') { Remove-Item '%ARCHIVE%' -Force };" ^
+    "Compress-Archive -Path '%MAIN_PKG%\*' -DestinationPath '%ARCHIVE%'"
+if errorlevel 1 (
+    echo Failed to create source archive.
+    exit /b 1
+)
+exit /b 0

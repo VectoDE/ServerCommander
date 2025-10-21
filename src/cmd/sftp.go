@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
@@ -70,22 +72,68 @@ func runSFTPBatch(alias string, commands []string, postProcess func(string) erro
 		return fmt.Errorf("session '%s' is not configured for SFTP", session.Alias)
 	}
 
-	password, err := promptPassword(session)
-	if err != nil {
-		return err
+	var password string
+	useSSHPass := false
+	if session.RequiresPass {
+		if _, err := exec.LookPath("sshpass"); err == nil {
+			password, err = promptPassword(session)
+			if err != nil {
+				return err
+			}
+			useSSHPass = true
+		} else {
+			fmt.Println(utils.Yellow, "sshpass not found; sftp will prompt for the password directly.", utils.Reset)
+		}
 	}
 
 	batch := strings.Join(commands, "\n") + "\n"
-	args := buildSFTPArgs(session)
-	cmd := exec.Command("sftp", args...)
-	cmd.Stdin = strings.NewReader(batch)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
 
-	if password != "" {
-		fmt.Println(utils.Yellow, "Note: Enter the password when prompted by sftp.", utils.Reset)
+	batchSource := "-"
+	cleanup := func() {}
+	if session.RequiresPass && !useSSHPass {
+		file, err := os.CreateTemp("", "sftp-batch-*.txt")
+		if err != nil {
+			return fmt.Errorf("failed to create temporary batch file: %w", err)
+		}
+		if _, err := file.WriteString(batch); err != nil {
+			file.Close()
+			os.Remove(file.Name())
+			return fmt.Errorf("failed to write temporary batch file: %w", err)
+		}
+		if err := file.Close(); err != nil {
+			os.Remove(file.Name())
+			return fmt.Errorf("failed to close temporary batch file: %w", err)
+		}
+		batchSource = file.Name()
+		cleanup = func() {
+			os.Remove(file.Name())
+		}
 	}
+	defer cleanup()
+
+	args := buildSFTPArgs(session, batchSource)
+
+	var cmd *exec.Cmd
+	if useSSHPass {
+		cmd = exec.Command("sshpass", append([]string{"-p", password, "sftp"}, args...)...)
+	} else {
+		cmd = exec.Command("sftp", args...)
+	}
+
+	var stdout, stderr bytes.Buffer
+	stdoutWriter := io.Writer(&stdout)
+	stderrWriter := io.Writer(&stderr)
+
+	if batchSource == "-" {
+		cmd.Stdin = strings.NewReader(batch)
+	} else {
+		cmd.Stdin = os.Stdin
+		stdoutWriter = io.MultiWriter(os.Stdout, stdoutWriter)
+		stderrWriter = io.MultiWriter(os.Stderr, stderrWriter)
+	}
+
+	cmd.Stdout = stdoutWriter
+	cmd.Stderr = stderrWriter
 
 	if err := cmd.Run(); err != nil {
 		output := stderr.String()
@@ -125,8 +173,8 @@ func renderSFTPListing(output string) error {
 	return nil
 }
 
-func buildSFTPArgs(session config.Session) []string {
-	args := []string{"-b", "-"}
+func buildSFTPArgs(session config.Session, batchSource string) []string {
+	args := []string{"-b", batchSource}
 	args = append(args, "-P", fmt.Sprintf("%d", session.Port))
 	if session.AuthMethod == config.AuthPrivateKey && session.KeyPath != "" {
 		args = append(args, "-i", session.KeyPath)
