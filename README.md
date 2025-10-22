@@ -81,7 +81,7 @@ Key commands inside the shell:
 | `ftp download <alias> <remote> <local>`| Download a file via FTP/FTPS.                                             |
 | `help`                                | Print the command catalogue.                                                |
 | `clear`                               | Clear the terminal and reprint the banner.                                  |
-| `htop`                                | Launch `htop` with the ServerCommander color theme.                         |
+| `htop`                                | Launch `htop` with the ServerCommander theme (falls back to PowerShell monitor on Windows). |
 | `exit`                                | Gracefully shut down ServerCommander.                                       |
 
 > **Note:** When prompted for the authentication method during `session add`, enter `password` or `private_key`. Passwords are never stored—if you choose `password` you will be asked for it when connecting.
