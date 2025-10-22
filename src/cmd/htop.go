@@ -100,11 +100,11 @@ func runWindowsProcessMonitor() error {
 		return errors.New("neither htop nor PowerShell were found in PATH. Please install htop or ensure PowerShell is available")
 	}
 
-	fmt.Printf("%sLaunching PowerShell process monitor (htop not found). Use Space/PageUp/PageDown to navigate and Ctrl+C to exit.%s\n", utils.Green, utils.Reset)
+	fmt.Printf("%sLaunching PowerShell process monitor (htop not found). Use Space/PageUp/PageDown to navigate and press 'q' to exit.%s\n", utils.Green, utils.Reset)
 
 	script := strings.Join([]string{
 		"$ErrorActionPreference = 'Stop'",
-		"Write-Host 'Process list sorted by CPU usage. Press Ctrl+C to exit paging.'",
+		"Write-Host \"Process list sorted by CPU usage. Press 'q' to exit paging.\"",
 		"Get-Process | Sort-Object -Property CPU -Descending | Select-Object -Property Id, ProcessName, CPU, PM, WS, StartTime -ErrorAction SilentlyContinue | Format-Table -AutoSize | Out-Host -Paging",
 	}, "; ")
 
