@@ -1,6 +1,6 @@
 package cmd
 
-import "embed"
+import _ "embed"
 
 //go:embed assets/htoprc
 var htopTheme []byte
