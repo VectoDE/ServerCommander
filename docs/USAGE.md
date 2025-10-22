@@ -112,21 +112,15 @@ server-commander logs server_id
 
 This command shows the most recent logs from the specified server.
 
-### 11. Process Management
+### 11. System Monitoring with `htop`
 
-To list running processes on the server:
-
-```bash
-server-commander processes server_id
-```
-
-To kill a running process:
+Launch the interactive `htop` monitor using the ServerCommander color palette:
 
 ```bash
-server-commander kill-process server_id --pid <process_id>
+server-commander htop
 ```
 
-This allows you to monitor and manage processes on the server remotely.
+This opens `htop` in the current terminal session. Press `q` to exit the monitor and return to the ServerCommander console.
 
 ## Additional Options
 
