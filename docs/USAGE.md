@@ -122,6 +122,8 @@ server-commander htop
 
 This opens `htop` in the current terminal session. Press `q` to exit the monitor and return to the ServerCommander console.
 
+> **Windows users:** If `htop` is not installed, ServerCommander automatically runs a PowerShell-based process monitor sorted by CPU usage. Use the paging controls shown in the prompt (Space/PageUp/PageDown) and press `Ctrl+C` to return.
+
 ## Additional Options
 
 ### Help
