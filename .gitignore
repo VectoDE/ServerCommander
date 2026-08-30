@@ -1,18 +1,14 @@
 ```
-# Compiled and build artifacts
-*.o
-*.obj
-*.out
+# Build artifacts
 build/
 
-# Dependencies
+# Dependencies and caches
 vendor/
 *.mod
 *.sum
 
-# Logs and temp files
+# Logs
 *.log
-*.tmp
 
 # Environment
 .env
@@ -25,12 +21,12 @@ vendor/
 *.swp
 *.swo
 
+# OS
+.DS_Store
+Thumbs.db
+
 # Coverage
 coverage/
 htmlcov/
 .coverage
-
-# Security and secrets
-secrets.go
-**/secrets.*
 ```

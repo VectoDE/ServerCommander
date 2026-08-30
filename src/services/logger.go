@@ -28,6 +28,9 @@ authHeaderPattern = regexp.MustCompile(`(?i)(authorization|auth)\s*[=:]\s*['"]?[
 sessionIDPattern  = regexp.MustCompile(`(?i)(session[_-]?id|sid)\s*[=:]\s*['"]?[^\s'"]+['"]?`)
 )
 
+// redactedPlaceholder is the standard placeholder for redacted sensitive data
+const redactedPlaceholder = "$1=***REDACTED***"
+
 var (
 logMutex sync.Mutex
 logFile  *os.File
@@ -61,11 +64,11 @@ return "UNKNOWN"
 // sanitizeLogMessage removes sensitive information from log messages
 func sanitizeLogMessage(message string) string {
 sanitized := message
-sanitized = passwordPattern.ReplaceAllString(sanitized, "$1=***REDACTED***")
-sanitized = tokenPattern.ReplaceAllString(sanitized, "$1=***REDACTED***")
+	sanitized = passwordPattern.ReplaceAllString(sanitized, redactedPlaceholder)
+	sanitized = tokenPattern.ReplaceAllString(sanitized, redactedPlaceholder)
 sanitized = privateKeyPattern.ReplaceAllString(sanitized, "***PRIVATE_KEY_REDACTED***")
-sanitized = authHeaderPattern.ReplaceAllString(sanitized, "$1=***REDACTED***")
-sanitized = sessionIDPattern.ReplaceAllString(sanitized, "$1=***REDACTED***")
+	sanitized = authHeaderPattern.ReplaceAllString(sanitized, redactedPlaceholder)
+	sanitized = sessionIDPattern.ReplaceAllString(sanitized, redactedPlaceholder)
 return sanitized
 }
 

@@ -224,57 +224,73 @@ func Connect(session config.Session, password string, _ []byte) (*Client, error)
 // createHostKeyCallback returns a callback function for verifying host keys.
 func (c *Client) createHostKeyCallback() ssh.HostKeyCallback {
 	return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-		// Extract host from hostname (may include port)
-		host := hostname
-		if h, _, err := net.SplitHostPort(hostname); err == nil {
-			host = h
-		}
+		return c.verifyHostKey(hostname, remote, key)
+	}
+}
 
-		// Check if host is already known
-		if c.knownHosts.HasHostKey(host, key) {
-			return nil
-		}
-
-		// Also check for any known keys for this host
-		existingKeys := c.knownHosts.GetHostKeys(host)
-		if len(existingKeys) > 0 {
-			// Host exists but with different key - potential MITM!
-			return fmt.Errorf("WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!\n"+
-				"Host: %s\n"+
-				"New key type: %s\n"+
-				"New fingerprint: %s\n"+
-				"This could indicate a man-in-the-middle attack.\n"+
-				"Please verify the host key manually and update known_hosts if legitimate.",
-				host, key.Type(), FormatFingerprint(key))
-		}
-
-		// Unknown host - prompt user in strict mode
-		if c.strictMode {
-			fingerprint := FormatFingerprint(key)
-			fmt.Printf("\n%s=== SSH Host Key Verification ===%s\n", utils.Cyan, utils.Reset)
-			fmt.Printf("The authenticity of host '%s (%s)' can't be established.\n", host, remote.String())
-			fmt.Printf("%s key fingerprint: %s\n", key.Type(), fingerprint)
-			fmt.Printf("This key is not stored in your known_hosts file.\n\n")
-
-			accept, err := utils.PromptBool(fmt.Sprintf("Are you sure you want to continue connecting and trust this host"), false)
-			if err != nil {
-				return fmt.Errorf("failed to prompt for host key verification: %w", err)
-			}
-
-			if !accept {
-				return fmt.Errorf("host key verification declined by user")
-			}
-
-			// Add to known_hosts
-			if err := c.knownHosts.AddHostKey(host, key); err != nil {
-				fmt.Printf("%sWarning: Failed to save host key to known_hosts: %v%s\n", utils.Yellow, err, utils.Reset)
-			} else {
-				fmt.Printf("%sHost key added to known_hosts.%s\n\n", utils.Green, utils.Reset)
-			}
-		}
-
+// verifyHostKey verifies a host key and handles user prompts for unknown hosts.
+func (c *Client) verifyHostKey(hostname string, remote net.Addr, key ssh.PublicKey) error {
+	host := extractHost(hostname)
+	
+	if c.knownHosts.HasHostKey(host, key) {
 		return nil
 	}
+
+	existingKeys := c.knownHosts.GetHostKeys(host)
+	if len(existingKeys) > 0 {
+		return c.createHostKeyChangedError(host, key)
+	}
+
+	if c.strictMode {
+		return c.handleUnknownHost(host, remote, key)
+	}
+
+	return nil
+}
+
+// extractHost extracts the hostname without port.
+func extractHost(hostname string) string {
+	if h, _, err := net.SplitHostPort(hostname); err == nil {
+		return h
+	}
+	return hostname
+}
+
+// createHostKeyChangedError creates an error for changed host keys (potential MITM).
+func (c *Client) createHostKeyChangedError(host string, key ssh.PublicKey) error {
+	return fmt.Errorf("WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!\n"+
+		"Host: %s\n"+
+		"New key type: %s\n"+
+		"New fingerprint: %s\n"+
+		"This could indicate a man-in-the-middle attack.\n"+
+		"Please verify the host key manually and update known_hosts if legitimate.",
+		host, key.Type(), FormatFingerprint(key))
+}
+
+// handleUnknownHost prompts the user to accept an unknown host key.
+func (c *Client) handleUnknownHost(host string, remote net.Addr, key ssh.PublicKey) error {
+	fingerprint := FormatFingerprint(key)
+	fmt.Printf("\n%s=== SSH Host Key Verification ===%s\n", utils.Cyan, utils.Reset)
+	fmt.Printf("The authenticity of host '%s (%s)' can't be established.\n", host, remote.String())
+	fmt.Printf("%s key fingerprint: %s\n", key.Type(), fingerprint)
+	fmt.Printf("This key is not stored in your known_hosts file.\n\n")
+
+	accept, err := utils.PromptBool(fmt.Sprintf("Are you sure you want to continue connecting and trust this host"), false)
+	if err != nil {
+		return fmt.Errorf("failed to prompt for host key verification: %w", err)
+	}
+
+	if !accept {
+		return fmt.Errorf("host key verification declined by user")
+	}
+
+	if err := c.knownHosts.AddHostKey(host, key); err != nil {
+		fmt.Printf("%sWarning: Failed to save host key to known_hosts: %v%s\n", utils.Yellow, err, utils.Reset)
+	} else {
+		fmt.Printf("%sHost key added to known_hosts.%s\n\n", utils.Green, utils.Reset)
+	}
+
+	return nil
 }
 
 // Close is a no-op kept for API compatibility with other services.
