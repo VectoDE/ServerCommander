@@ -58,11 +58,11 @@ func Execute(input string) error {
 	}
 
 	if err := descriptor.Handler(parts[1:]); err != nil {
-		services.LogToFile(fmt.Sprintf("command '%s' failed: %v", descriptor.Name, err))
+		services.LegacyLogToFile(fmt.Sprintf("command '%s' failed: %v", descriptor.Name, err))
 		return err
 	}
 
-	services.LogToFile(fmt.Sprintf("command '%s' executed successfully", descriptor.Name))
+	services.LegacyLogToFile(fmt.Sprintf("command '%s' executed successfully", descriptor.Name))
 	return nil
 }
 

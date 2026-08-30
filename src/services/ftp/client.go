@@ -3,6 +3,7 @@ package ftp
 import (
 	"bufio"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"net"
@@ -171,10 +172,36 @@ func (c *Client) startTLS() error {
 		return err
 	}
 
-	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	// Create secure TLS configuration with proper certificate validation
+	tlsConfig := &tls.Config{
+		ServerName:         c.session.Host,
+		InsecureSkipVerify: c.session.SkipTLSVerify, // Only skip if explicitly configured
+		MinVersion:         tls.VersionTLS12,        // Enforce TLS 1.2 minimum
+	}
+
+	// Load custom CA certificates if specified
+	if c.session.TLSCAFile != "" {
+		caCert, err := os.ReadFile(c.session.TLSCAFile)
+		if err != nil {
+			return fmt.Errorf("failed to read CA file %s: %w", c.session.TLSCAFile, err)
+		}
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(caCert) {
+			return fmt.Errorf("failed to parse CA file %s", c.session.TLSCAFile)
+		}
+		tlsConfig.RootCAs = caCertPool
+	}
+
 	tlsConn := tls.Client(c.conn, tlsConfig)
 	if err := tlsConn.Handshake(); err != nil {
-		return err
+		return fmt.Errorf("TLS handshake failed: %w", err)
+	}
+
+	// Verify hostname unless explicitly disabled
+	if !c.session.SkipTLSVerify {
+		if err := tlsConn.VerifyHostname(c.session.Host); err != nil {
+			return fmt.Errorf("hostname verification failed for %s: %w", c.session.Host, err)
+		}
 	}
 
 	c.conn = tlsConn

@@ -31,18 +31,20 @@ const (
 // struct deliberately omits secret material such as passwords. These must be
 // provided at runtime to avoid storing sensitive data on disk.
 type Session struct {
-	Alias        string     `json:"alias"`
-	Protocol     Protocol   `json:"protocol"`
-	Host         string     `json:"host"`
-	Port         int        `json:"port"`
-	Username     string     `json:"username"`
-	AuthMethod   AuthMethod `json:"authMethod"`
-	KeyPath      string     `json:"keyPath,omitempty"`
-	UseTLS       bool       `json:"useTls,omitempty"`
-	Description  string     `json:"description,omitempty"`
-	RequiresPass bool       `json:"requiresPass"`
-	CreatedAt    time.Time  `json:"createdAt"`
-	UpdatedAt    time.Time  `json:"updatedAt"`
+	Alias          string     `json:"alias"`
+	Protocol       Protocol   `json:"protocol"`
+	Host           string     `json:"host"`
+	Port           int        `json:"port"`
+	Username       string     `json:"username"`
+	AuthMethod     AuthMethod `json:"authMethod"`
+	KeyPath        string     `json:"keyPath,omitempty"`
+	UseTLS         bool       `json:"useTls,omitempty"`
+	SkipTLSVerify  bool       `json:"skipTlsVerify,omitempty"` // Only for explicit self-signed cert scenarios
+	TLSCAFile      string     `json:"tlsCAFile,omitempty"`     // Custom CA certificate file
+	Description    string     `json:"description,omitempty"`
+	RequiresPass   bool       `json:"requiresPass"`
+	CreatedAt      time.Time  `json:"createdAt"`
+	UpdatedAt      time.Time  `json:"updatedAt"`
 }
 
 // SessionStore provides CRUD operations for session definitions.
