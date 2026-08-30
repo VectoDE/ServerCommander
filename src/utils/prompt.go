@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"sync"
+
+	"golang.org/x/term"
 )
 
 var (
@@ -59,12 +61,27 @@ func Prompt(question, defaultValue string) (string, error) {
 // characters. It returns an error when the stdin file descriptor is not a
 // terminal.
 func PromptPassword(question string) (string, error) {
-	fmt.Printf("%s%s (input hidden not supported): %s", Cyan, question, Reset)
-	value, err := readLine()
-	if err != nil {
-		return "", err
+	fmt.Printf("%s%s: %s", Cyan, question, Reset)
+
+	// Check if stdin is a terminal
+	if !term.IsTerminal(int(os.Stdin.Fd())) {
+		// Not a terminal - fall back to regular input with warning
+		fmt.Printf("\n%sWarning: Terminal not detected. Input will not be hidden.%s\n", Yellow, Reset)
+		value, err := readLine()
+		if err != nil {
+			return "", err
+		}
+		return strings.TrimSpace(value), nil
 	}
-	return strings.TrimSpace(value), nil
+
+	// Read password without echo
+	passwordBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+	if err != nil {
+		return "", fmt.Errorf("failed to read password: %w", err)
+	}
+
+	fmt.Println() // Newline after password input
+	return strings.TrimSpace(string(passwordBytes)), nil
 }
 
 // PromptBool converts user input into a boolean. Accepted inputs are "y",

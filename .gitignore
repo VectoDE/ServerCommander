@@ -1,4 +1,36 @@
 ```
-# Documentation files that might be generated
-docs/*.md
+# Compiled and build artifacts
+*.o
+*.obj
+*.out
+build/
+
+# Dependencies
+vendor/
+*.mod
+*.sum
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Security and secrets
+secrets.go
+**/secrets.*
 ```
