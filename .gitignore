@@ -1,11 +1,10 @@
 ```
-# Build artifacts
+# Compiled and build artifacts
+*.exe
 build/
 
 # Dependencies and caches
 vendor/
-*.mod
-*.sum
 
 # Logs
 *.log
@@ -18,15 +17,10 @@ vendor/
 # Editors
 .vscode/
 .idea/
-*.swp
-*.swo
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
+# Go-specific
+*.o
+*.a
+*.so
+*.out
 ```
