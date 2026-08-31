@@ -33,7 +33,7 @@ func ValidateHostname(hostname string) error {
 	}
 
 	// Versuche als IP-Adresse zu parsen (IPv4 oder IPv6)
-	if ip := net.ParseIP(hostname); ip != nil {
+	if net.ParseIP(hostname) != nil {
 		return nil // Gültige IP
 	}
 
