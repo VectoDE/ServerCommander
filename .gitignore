@@ -3,12 +3,11 @@
 *.exe
 build/
 
-# Dependencies
+# Dependencies and caches
 vendor/
 
-# Logs and temp files
+# Logs
 *.log
-*.tmp
 
 # Environment
 .env
