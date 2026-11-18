@@ -25,7 +25,7 @@ func TestSecretStore_DefaultServiceName(t *testing.T) {
 
 func TestSecretStore_AccountName(t *testing.T) {
 	store := NewSecretStore("test")
-	
+
 	tests := []struct {
 		alias    string
 		expected string
@@ -35,7 +35,7 @@ func TestSecretStore_AccountName(t *testing.T) {
 		{"test-server", "session:test-server"},
 		{"test server", "session:test server"},
 	}
-	
+
 	for _, tt := range tests {
 		result := store.accountName(tt.alias)
 		if result != tt.expected {
@@ -50,7 +50,7 @@ func TestSecretEntry_MarshalUnmarshal(t *testing.T) {
 		Passphrase: "secret-passphrase",
 		CustomCA:   "/path/to/ca.crt",
 	}
-	
+
 	// Test that the struct can be marshaled and unmarshaled
 	// (actual encryption/decryption tested via Store/Retrieve)
 	_ = entry // Suppress unused variable warning
@@ -58,12 +58,12 @@ func TestSecretEntry_MarshalUnmarshal(t *testing.T) {
 
 func TestSecretStore_FallbackDir(t *testing.T) {
 	store := NewSecretStore("test")
-	
+
 	dir, err := store.fallbackDir()
 	if err != nil {
 		t.Fatalf("fallbackDir() error: %v", err)
 	}
-	
+
 	// Check that directory exists
 	info, err := os.Stat(dir)
 	if err != nil {
@@ -72,7 +72,7 @@ func TestSecretStore_FallbackDir(t *testing.T) {
 	if !info.IsDir() {
 		t.Error("fallback path is not a directory")
 	}
-	
+
 	// Check permissions (should be 0700)
 	mode := info.Mode().Perm()
 	if mode&0077 != 0 {
@@ -82,24 +82,24 @@ func TestSecretStore_FallbackDir(t *testing.T) {
 
 func TestSecretStore_FallbackFile(t *testing.T) {
 	store := NewSecretStore("test")
-	
+
 	tests := []struct {
 		alias    string
 		filename string
 	}{
 		{"myserver", "myserver.secret"},
-		{"MyServer", "myserver.secret"}, // Lowercased
+		{"MyServer", "myserver.secret"},       // Lowercased
 		{"test server", "test_server.secret"}, // Spaces replaced
 		{"test-server", "test-server.secret"},
 	}
-	
+
 	for _, tt := range tests {
 		path, err := store.fallbackFile(tt.alias)
 		if err != nil {
 			t.Errorf("fallbackFile(%q) error: %v", tt.alias, err)
 			continue
 		}
-		
+
 		expectedBase := tt.filename
 		actualBase := filepath.Base(path)
 		if actualBase != expectedBase {
@@ -111,29 +111,29 @@ func TestSecretStore_FallbackFile(t *testing.T) {
 func TestSecretStore_StoreRetrieveFallback(t *testing.T) {
 	store := NewSecretStore("test-fallback")
 	alias := "test-session-fallback"
-	
+
 	entry := SecretEntry{
 		KeyPath:    "/tmp/test.key",
 		Passphrase: "test-passphrase",
 		CustomCA:   "/tmp/ca.crt",
 	}
-	
+
 	// Store using fallback
 	err := store.storeFallback(alias, entry)
 	if err != nil {
 		t.Fatalf("storeFallback() error: %v", err)
 	}
-	
+
 	// Retrieve using fallback
 	retrieved, err := store.retrieveFallback(alias)
 	if err != nil {
 		t.Fatalf("retrieveFallback() error: %v", err)
 	}
-	
+
 	if retrieved == nil {
 		t.Fatal("retrieveFallback() returned nil")
 	}
-	
+
 	if retrieved.KeyPath != entry.KeyPath {
 		t.Errorf("KeyPath mismatch: got %q, want %q", retrieved.KeyPath, entry.KeyPath)
 	}
@@ -143,7 +143,7 @@ func TestSecretStore_StoreRetrieveFallback(t *testing.T) {
 	if retrieved.CustomCA != entry.CustomCA {
 		t.Errorf("CustomCA mismatch: got %q, want %q", retrieved.CustomCA, entry.CustomCA)
 	}
-	
+
 	// Cleanup
 	_ = store.deleteFallback(alias)
 }
@@ -151,23 +151,23 @@ func TestSecretStore_StoreRetrieveFallback(t *testing.T) {
 func TestSecretStore_DeleteFallback(t *testing.T) {
 	store := NewSecretStore("test-delete")
 	alias := "test-session-delete"
-	
+
 	entry := SecretEntry{
 		KeyPath: "/tmp/test.key",
 	}
-	
+
 	// Store first
 	err := store.storeFallback(alias, entry)
 	if err != nil {
 		t.Fatalf("storeFallback() error: %v", err)
 	}
-	
+
 	// Delete
 	err = store.deleteFallback(alias)
 	if err != nil {
 		t.Fatalf("deleteFallback() error: %v", err)
 	}
-	
+
 	// Verify deletion - should return nil for non-existent file
 	retrieved, err := store.retrieveFallback(alias)
 	if err != nil {
@@ -180,7 +180,7 @@ func TestSecretStore_DeleteFallback(t *testing.T) {
 
 func TestSecretStore_RetrieveNonExistent(t *testing.T) {
 	store := NewSecretStore("test-nonexistent")
-	
+
 	entry, err := store.retrieveFallback("nonexistent-session")
 	if err != nil {
 		t.Errorf("retrieveFallback() for non-existent session should return nil, nil, got err: %v", err)
@@ -195,22 +195,22 @@ func TestMigratePlaintextToSecure(t *testing.T) {
 	sessionStore := &SessionStore{
 		Sessions: map[string]Session{},
 	}
-	
+
 	secretStore := NewSecretStore("test-migrate")
-	
+
 	// Migration should succeed even with empty store
 	err := MigratePlaintextToSecure(sessionStore, secretStore)
 	if err != nil {
 		t.Errorf("MigratePlaintextToSecure() error: %v", err)
 	}
-	
+
 	// Add a session and test migration
 	sessionStore.Sessions["test"] = Session{
 		Alias:    "test",
 		Host:     "localhost",
 		Username: "user",
 	}
-	
+
 	err = MigratePlaintextToSecure(sessionStore, secretStore)
 	if err != nil {
 		t.Errorf("MigratePlaintextToSecure() with sessions error: %v", err)

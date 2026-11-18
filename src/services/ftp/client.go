@@ -248,7 +248,7 @@ func (c *Client) openDataConnection(command string) (net.Conn, error) {
 		}
 	}
 
-	if err := c.control.PrintfLine(command); err != nil {
+	if err := c.control.PrintfLine("%s", command); err != nil {
 		dataConn.Close()
 		return nil, err
 	}

@@ -9,10 +9,10 @@ import (
 
 func TestNetworkError_Error(t *testing.T) {
 	err := &NetworkError{
-		Op:      "connect",
-		Err:     assert.AnError,
-		Host:    "example.com",
-		Port:    22,
+		Op:        "connect",
+		Err:       assert.AnError,
+		Host:      "example.com",
+		Port:      22,
 		Retryable: true,
 	}
 	assert.Contains(t, err.Error(), "network error during connect")
@@ -30,18 +30,18 @@ func TestAuthError_Error(t *testing.T) {
 
 func TestTimeoutError_Error(t *testing.T) {
 	err := &TimeoutError{
-		Op:      "read",
+		Op:       "read",
 		Duration: 30 * time.Second,
-		Err:     assert.AnError,
+		Err:      assert.AnError,
 	}
 	assert.Contains(t, err.Error(), "timeout after 30s during read")
 }
 
 func TestTimeoutError_Timeout(t *testing.T) {
 	err := &TimeoutError{
-		Op:      "read",
+		Op:       "read",
 		Duration: 30 * time.Second,
-		Err:     assert.AnError,
+		Err:      assert.AnError,
 	}
 	assert.True(t, err.Timeout())
 }
@@ -114,11 +114,11 @@ func TestIsNetworkError(t *testing.T) {
 
 func TestShouldRetry(t *testing.T) {
 	tests := []struct {
-		name      string
-		err       error
-		attempt   int
-		max       int
-		expected  bool
+		name     string
+		err      error
+		attempt  int
+		max      int
+		expected bool
 	}{
 		{"nil error", nil, 1, 3, false},
 		{"max attempts reached", assert.AnError, 3, 3, false},
