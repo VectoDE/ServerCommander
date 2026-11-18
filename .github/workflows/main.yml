@@ -3,11 +3,9 @@ name: Go CI
 on:
   push:
     branches:
-      - development
       - main
   pull_request:
     branches:
-      - development
       - main
 
 jobs:
