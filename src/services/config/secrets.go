@@ -14,15 +14,15 @@ import (
 // OS-native secret stores (Windows Credential Manager, macOS Keychain,
 // Linux Secret Service).
 type SecretStore struct {
-	serviceName string
+	serviceName   string
 	accountPrefix string
 }
 
 // SecretEntry represents a single secret entry in the store.
 type SecretEntry struct {
-	KeyPath       string `json:"key_path,omitempty"`
-	Passphrase    string `json:"passphrase,omitempty"` // For encrypted private keys
-	CustomCA      string `json:"custom_ca,omitempty"`  // Custom CA certificate content
+	KeyPath    string `json:"key_path,omitempty"`
+	Passphrase string `json:"passphrase,omitempty"` // For encrypted private keys
+	CustomCA   string `json:"custom_ca,omitempty"`  // Custom CA certificate content
 }
 
 // NewSecretStore creates a new secret store with the given service name.
@@ -46,7 +46,7 @@ func (s *SecretStore) accountName(alias string) string {
 // Only sensitive fields are stored; the session metadata remains in the JSON file.
 func (s *SecretStore) Store(alias string, entry SecretEntry) error {
 	account := s.accountName(alias)
-	
+
 	data, err := json.Marshal(entry)
 	if err != nil {
 		return fmt.Errorf("failed to marshal secret entry: %w", err)
@@ -68,7 +68,7 @@ func (s *SecretStore) Store(alias string, entry SecretEntry) error {
 // Retrieve fetches sensitive session data from the OS secret store.
 func (s *SecretStore) Retrieve(alias string) (*SecretEntry, error) {
 	account := s.accountName(alias)
-	
+
 	data, err := keyring.Get(s.serviceName, account)
 	if err != nil {
 		// Check if we're running in an environment without keyring support
@@ -94,7 +94,7 @@ func (s *SecretStore) Retrieve(alias string) (*SecretEntry, error) {
 // Delete removes sensitive session data from the OS secret store.
 func (s *SecretStore) Delete(alias string) error {
 	account := s.accountName(alias)
-	
+
 	err := keyring.Delete(s.serviceName, account)
 	if err != nil {
 		// Check if we're running in an environment without keyring support
@@ -208,7 +208,7 @@ func (s *SecretStore) deleteFallback(alias string) error {
 func MigratePlaintextToSecure(store *SessionStore, secretStore *SecretStore) error {
 	sessions := store.List()
 	migrated := 0
-	
+
 	for _, session := range sessions {
 		// Check if secret already exists in secure store
 		existing, err := secretStore.Retrieve(session.Alias)
@@ -216,17 +216,17 @@ func MigratePlaintextToSecure(store *SessionStore, secretStore *SecretStore) err
 			// Log but continue - don't fail migration for individual sessions
 			continue
 		}
-		
+
 		if existing != nil {
 			// Already migrated
 			continue
 		}
-		
+
 		// For now, no migration needed since plaintext never stored passwords
 		// Future: if plaintext stored sensitive data, extract and move to secret store here
-		
+
 		_ = migrated // Suppress unused variable warning
 	}
-	
+
 	return nil
 }
