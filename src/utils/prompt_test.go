@@ -88,7 +88,7 @@ func TestPromptPassword_EmptyInput(t *testing.T) {
 
 	// Empty input is valid, may get EOF
 	t.Logf("Empty password result: '%s', err: %v", password, err)
-	
+
 	// Accept either empty password or error for empty input
 	if err != nil && password != "" {
 		// Either error with empty password OR no error with empty password is OK
@@ -137,7 +137,7 @@ func TestPromptPassword_Unicode(t *testing.T) {
 // TestPromptPassword_LongPassword tests long password handling
 func TestPromptPassword_LongPassword(t *testing.T) {
 	longPass := strings.Repeat("a", 256)
-	
+
 	oldStdin := os.Stdin
 	defer func() { os.Stdin = oldStdin }()
 
@@ -268,9 +268,9 @@ func BenchmarkPromptPassword(b *testing.B) {
 		fmt.Print("Enter password: ")
 		reader := bufio.NewReader(os.Stdin)
 		_, err = reader.ReadString('\n')
-		
+
 		os.Stdin = oldStdin
-		
+
 		if err != nil && err != io.EOF {
 			b.Logf("ReadString returned: %v", err)
 		}

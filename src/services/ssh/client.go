@@ -231,7 +231,7 @@ func (c *Client) createHostKeyCallback() ssh.HostKeyCallback {
 // verifyHostKey verifies a host key and handles user prompts for unknown hosts.
 func (c *Client) verifyHostKey(hostname string, remote net.Addr, key ssh.PublicKey) error {
 	host := extractHost(hostname)
-	
+
 	if c.knownHosts.HasHostKey(host, key) {
 		return nil
 	}
@@ -301,10 +301,10 @@ func (c *Client) Close() error {
 // InteractiveShell spawns the system ssh command with strict host key checking.
 func (c *Client) InteractiveShell() error {
 	args := c.buildBaseArgs()
-	
+
 	// Enable strict host key checking for system ssh
 	args = append([]string{"-o", "StrictHostKeyChecking=yes", "-o", "UserKnownHostsFile=" + c.knownHosts.filepath}, args...)
-	
+
 	cmd := exec.Command("ssh", args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -316,7 +316,7 @@ func (c *Client) InteractiveShell() error {
 func (c *Client) Run(command string) (string, error) {
 	args := append(c.buildBaseArgs(), command)
 	args = append([]string{"-o", "StrictHostKeyChecking=yes", "-o", "UserKnownHostsFile=" + c.knownHosts.filepath}, args...)
-	
+
 	cmd := exec.Command("ssh", args...)
 	var buffer bytes.Buffer
 	cmd.Stdout = &buffer
@@ -332,7 +332,7 @@ func (c *Client) Run(command string) (string, error) {
 // RunWithConfig executes a command using the native Go SSH client.
 func (c *Client) RunWithConfig(command string) (string, error) {
 	addr := fmt.Sprintf("%s:%d", c.session.Host, c.session.Port)
-	
+
 	conn, err := ssh.Dial("tcp", addr, c.sshConfig)
 	if err != nil {
 		return "", fmt.Errorf("failed to establish SSH connection: %w", err)

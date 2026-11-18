@@ -119,7 +119,7 @@ func ValidateFilePath(path string, allowRelative bool) error {
 func SanitizeString(input string) string {
 	// Entferne Null-Bytes
 	input = strings.ReplaceAll(input, "\x00", "")
-	
+
 	// Entferne andere gefährliche Steuerzeichen (außer \n und \t für normale Textausgabe)
 	sanitized := strings.Map(func(r rune) rune {
 		if r >= 0 && r < 32 && r != '\n' && r != '\r' && r != '\t' {

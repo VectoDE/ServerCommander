@@ -3,43 +3,56 @@ name: Go CI
 on:
   push:
     branches:
-      - development
       - main
   pull_request:
     branches:
-      - development
       - main
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
-          go-version: '1.23.5'
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
 
-      - name: Cache Go modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
-      - name: Install golangci-lint
+      - name: Verify modules
         run: |
-          curl -sSfL https://github.com/golangci/golangci-lint/releases/download/v1.51.0/golangci-lint-1.51.0-linux-amd64.tar.gz | tar -xzv -C /tmp
-          sudo mv /tmp/golangci-lint-1.51.0-linux-amd64/golangci-lint /usr/local/bin
+          go mod verify
+          go mod tidy -diff
 
-      - name: Lint code
-        run: golangci-lint run --timeout=5m --disable-all --enable=gofmt --enable=golint
-
-      - name: Build and test Go project
+      - name: Check formatting
         run: |
-          go mod tidy
-          go test ./...
+          unformatted="$(gofmt -s -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "Nicht gofmt-formatiert:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build (Linux und Windows)
+        run: |
+          go build ./...
+          GOOS=windows GOARCH=amd64 go build ./...
+
+      - name: Test
+        run: go test ./...
+
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...

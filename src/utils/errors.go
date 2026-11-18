@@ -10,10 +10,10 @@ import (
 
 // NetworkError represents a network-related error with additional context.
 type NetworkError struct {
-	Op      string
-	Err     error
-	Host    string
-	Port    int
+	Op        string
+	Err       error
+	Host      string
+	Port      int
 	Retryable bool
 }
 
@@ -39,9 +39,9 @@ func (e *AuthError) Error() string {
 
 // TimeoutError represents a timeout error with context.
 type TimeoutError struct {
-	Op      string
+	Op       string
 	Duration time.Duration
-	Err     error
+	Err      error
 }
 
 func (e *TimeoutError) Error() string {
@@ -58,9 +58,9 @@ func (e *TimeoutError) Timeout() bool {
 
 // ValidationError represents an input validation error.
 type ValidationError struct {
-	Field   string
-	Value   string
-	Reason  string
+	Field  string
+	Value  string
+	Reason string
 }
 
 func (e *ValidationError) Error() string {
